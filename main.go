@@ -85,10 +85,10 @@ func check(e error) {
 	}
 }
 
-func gitclone(cloneURL string, repoName string, wg *sync.WaitGroup) {
+func gitclone(cloneURL string, fpath string, wg *sync.WaitGroup, rn string, orgoruserName string) {
 	defer wg.Done()
 
-	cmd := exec.Command("/usr/bin/git", "clone", cloneURL, repoName)
+	cmd := exec.Command("/usr/bin/git", "clone", cloneURL, fpath)
 	var out, stderr bytes.Buffer
 	cmd.Stdout = &out
 	cmd.Stderr = &stderr
@@ -101,9 +101,9 @@ func gitclone(cloneURL string, repoName string, wg *sync.WaitGroup) {
 
 	func(rn string, fpath string, wgs *sync.WaitGroup, orgoruserName string) {
 		enqueueJob(func() {
-			runGitTools(*toolName, fpath, wgs, rn, orgoruserName)
+			runGitTools(*toolName, fpath+"/", wgs, rn, orgoruserName)
 		})
-	}("", repoName, &wgs, "")
+	}(rn, fpath, &wgs, orgoruserName)
 
 	wgs.Wait()
 
@@ -114,7 +114,7 @@ func gitclone(cloneURL string, repoName string, wg *sync.WaitGroup) {
 		// panic(err)
 	}
 
-	err = cleanup(repoName, "", "")
+	err = cleanup(fpath+"/", rn, orgoruserName)
 	check(err)
 
 	if err != nil {
@@ -133,7 +133,7 @@ func gitRepoURL(path string) (string, error) {
 }
 
 // Moving cloning logic out of individual functions
-func executeclone(repo *github.Repository, directory string, wg *sync.WaitGroup) {
+func executeclone(repo *github.Repository, directory string, wg *sync.WaitGroup, org string) {
 	urlToClone := ""
 
 	switch *scanPrivateReposOnly {
@@ -158,7 +158,7 @@ func executeclone(repo *github.Repository, directory string, wg *sync.WaitGroup)
 		fmt.Println(urlToClone)
 		func(orgclone *sync.WaitGroup, urlToClone string, directory string) {
 			enqueueJob(func() {
-				gitclone(urlToClone, directory, orgclone)
+				gitclone(urlToClone, directory, orgclone, repo.Name, org)
 			})
 		}(&orgclone, urlToClone, directory)
 	}
@@ -195,7 +195,7 @@ func cloneorgrepos(ctx context.Context, client *github.Client, org string) error
 			fmt.Println("Repo " + *repo.Name + " is in the repo blacklist, moving on..")
 		} else {
 			orgrepowg.Add(1)
-			go executeclone(repo, "/tmp/repos/org/"+org+"/"+*repo.Name, &orgrepowg)
+			go executeclone(repo, "/tmp/repos/org/"+org+"/"+*repo.Name, &orgrepowg, org)
 		}
 	}
 
@@ -239,7 +239,7 @@ func cloneuserrepos(ctx context.Context, client *github.Client, user string) err
 	//iterating through the userRepos array
 	for _, userRepo := range userRepos {
 		userrepowg.Add(1)
-		go executeclone(userRepo, "/tmp/repos/users/"+user+"/"+*userRepo.Name, &userrepowg)
+		go executeclone(userRepo, "/tmp/repos/users/"+user+"/"+*userRepo.Name, &userrepowg, user)
 	}
 
 	userrepowg.Wait()
@@ -285,7 +285,7 @@ func cloneusergists(ctx context.Context, client *github.Client, user string) err
 		//cloning the individual user gists
 		func(gisturl string, userGist *github.Gist, user string, usergistclone *sync.WaitGroup) {
 			enqueueJob(func() {
-				gitclone(gisturl, "/tmp/repos/users/"+user+"/"+*userGist.ID, usergistclone)
+				gitclone(gisturl, "/tmp/repos/users/"+user+"/"+*userGist.ID, usergistclone, *userGist.ID, user)
 			})
 		}(gisturl, userGist, user, &usergistclone)
 	}
@@ -910,7 +910,7 @@ func cloneTeamRepos(ctx context.Context, client *github.Client, org string, team
 		//iterating through the repo array
 		for _, repo := range teamRepos {
 			teamrepowg.Add(1)
-			go executeclone(repo, "/tmp/repos/team/"+*repo.Name, &teamrepowg)
+			go executeclone(repo, "/tmp/repos/team/"+*repo.Name, &teamrepowg, teamName)
 		}
 
 		teamrepowg.Wait()
@@ -1116,11 +1116,11 @@ func main() {
 		Info("Starting to clone: " + url + "\n")
 		var wgo sync.WaitGroup
 		wgo.Add(1)
-		func(url string, fpath string, wgo *sync.WaitGroup) {
+		func(url string, fpath string, wgo *sync.WaitGroup, rn string, orgoruserName string) {
 			enqueueJob(func() {
-				gitclone(url, fpath, wgo)
+				gitclone(url, fpath, wgo, rn, orgoruserName)
 			})
-		}(url, fpath, &wgo)
+		}(url, fpath, &wgo, rn, orgoruserName)
 		wgo.Wait()
 		Info("Cloning of: " + url + " finished\n")
 
