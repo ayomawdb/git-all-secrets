@@ -101,6 +101,7 @@ func gitclone(cloneURL string, fpath string, wg *sync.WaitGroup, rn string, orgo
 
 	func(rn string, fpath string, wgs *sync.WaitGroup, orgoruserName string) {
 		enqueueJob(func() {
+                        Info("Queuing scan of: " + fpath + "\n")
 			runGitTools(*toolName, fpath+"/", wgs, rn, orgoruserName)
 		})
 	}(rn, fpath, &wgs, orgoruserName)
@@ -315,6 +316,7 @@ func listallusers(ctx context.Context, client *github.Client, org string) ([]*gi
 }
 
 func runTrufflehog(filepath string, reponame string, orgoruser string) error {
+        Info("Run runTrufflehog on: " + filepath)
 	outputDir := "/tmp/results/" + orgoruser + "/" + reponame
 	os.MkdirAll(outputDir, 0700)
 	outputFile1 := outputDir + "/" + "truffleHog"
@@ -384,6 +386,7 @@ func cleanup(filepath string, reponame string, orgoruser string) error {
 func runGitTools(tool string, filepath string, wg *sync.WaitGroup, reponame string, orgoruser string) {
 	defer wg.Done()
 
+        Info("Run runGitTools on: " + filepath)
 	switch tool {
 	case "all":
 		err := runTrufflehog(filepath, reponame, orgoruser)
