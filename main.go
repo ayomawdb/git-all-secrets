@@ -95,15 +95,15 @@ func gitclone(cloneURL string, repoName string, wg *sync.WaitGroup) {
 	err := cmd.Run()
 
 	//scanning
-	Info("Starting to scan: " + url + "\n")
+	Info("Starting to scan: " + cloneURL + "\n")
 	var wgs sync.WaitGroup
 	wgs.Add(1)
 
 	func(rn string, fpath string, wgs *sync.WaitGroup, orgoruserName string) {
 		enqueueJob(func() {
-			runGitTools(*toolName, fpath+"/", wgs, rn, orgoruserName)
+			runGitTools(*toolName, fpath, wgs, rn, orgoruserName)
 		})
-	}(rn, fpath, &wgs, orgoruserName)
+	}("", repoName, &wgs, "")
 
 	wgs.Wait()
 
@@ -114,7 +114,7 @@ func gitclone(cloneURL string, repoName string, wg *sync.WaitGroup) {
 		// panic(err)
 	}
 
-	err = cleanup(fpath+"/", rn, orgoruserName)
+	err = cleanup(repoName, "", "")
 	check(err)
 
 	if err != nil {
