@@ -346,6 +346,17 @@ func runReposupervisor(filepath string, reponame string, orgoruser string) error
 	return nil
 }
 
+func cleanup(filepath string, reponame string, orgoruser string) error {
+	err := os.RemoveAll(filepath)
+	if err != nil {
+		Info("Cleanup failed for: " + orgoruser + "_" + reponame + ". Please clean " + filepath + " manually.")
+		fmt.Println(err)
+	} else {
+		fmt.Println("Finished cleanup for : " + orgoruser + "_" + reponame)
+	}
+	return nil;
+}
+
 func runGitTools(tool string, filepath string, wg *sync.WaitGroup, reponame string, orgoruser string) {
 	defer wg.Done()
 
@@ -355,13 +366,19 @@ func runGitTools(tool string, filepath string, wg *sync.WaitGroup, reponame stri
 		check(err)
 		err = runReposupervisor(filepath, reponame, orgoruser)
 		check(err)
+		err = cleanup(filepath, reponame, orgoruser)
+		check(err)
 
 	case "thog":
 		err := runTrufflehog(filepath, reponame, orgoruser)
 		check(err)
+		err = cleanup(filepath, reponame, orgoruser)
+		check(err)
 
 	case "repo-supervisor":
 		err := runReposupervisor(filepath, reponame, orgoruser)
+		check(err)
+		err = cleanup(filepath, reponame, orgoruser)
 		check(err)
 	}
 }
