@@ -107,7 +107,7 @@ func gitclone(cloneURL string, fpath string, wg *sync.WaitGroup, rn string, orgo
 
 	wgs.Wait()
 
-	Info("Scanning of: " + url + " finished\n")
+	Info("Scanning of: " + cloneURL + " finished\n")
 
 	if err != nil {
 		fmt.Println(fmt.Sprint(err) + ": " + stderr.String())
@@ -158,7 +158,7 @@ func executeclone(repo *github.Repository, directory string, wg *sync.WaitGroup,
 		fmt.Println(urlToClone)
 		func(orgclone *sync.WaitGroup, urlToClone string, directory string) {
 			enqueueJob(func() {
-				gitclone(urlToClone, directory, orgclone, repo.Name, org)
+				gitclone(urlToClone, directory, orgclone, *repo.Name, org)
 			})
 		}(&orgclone, urlToClone, directory)
 	}
