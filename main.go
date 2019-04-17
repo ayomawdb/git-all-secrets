@@ -93,8 +93,32 @@ func gitclone(cloneURL string, repoName string, wg *sync.WaitGroup) {
 	cmd.Stdout = &out
 	cmd.Stderr = &stderr
 	err := cmd.Run()
+
+	//scanning
+	Info("Starting to scan: " + url + "\n")
+	var wgs sync.WaitGroup
+	wgs.Add(1)
+
+	func(rn string, fpath string, wgs *sync.WaitGroup, orgoruserName string) {
+		enqueueJob(func() {
+			runGitTools(*toolName, fpath+"/", wgs, rn, orgoruserName)
+		})
+	}(rn, fpath, &wgs, orgoruserName)
+
+	wgs.Wait()
+
+	Info("Scanning of: " + url + " finished\n")
+
 	if err != nil {
 		fmt.Println(fmt.Sprint(err) + ": " + stderr.String())
+		// panic(err)
+	}
+
+	err = cleanup(fpath+"/", rn, orgoruserName)
+	check(err)
+
+	if err != nil {
+		fmt.Println("Cleanup failed: " + fmt.Sprint(err))
 		// panic(err)
 	}
 }
@@ -366,20 +390,15 @@ func runGitTools(tool string, filepath string, wg *sync.WaitGroup, reponame stri
 		check(err)
 		err = runReposupervisor(filepath, reponame, orgoruser)
 		check(err)
-		err = cleanup(filepath, reponame, orgoruser)
-		check(err)
 
 	case "thog":
 		err := runTrufflehog(filepath, reponame, orgoruser)
-		check(err)
-		err = cleanup(filepath, reponame, orgoruser)
 		check(err)
 
 	case "repo-supervisor":
 		err := runReposupervisor(filepath, reponame, orgoruser)
 		check(err)
-		err = cleanup(filepath, reponame, orgoruser)
-		check(err)
+
 	}
 }
 
@@ -1104,20 +1123,6 @@ func main() {
 		}(url, fpath, &wgo)
 		wgo.Wait()
 		Info("Cloning of: " + url + " finished\n")
-
-		//scanning
-		Info("Starting to scan: " + url + "\n")
-		var wgs sync.WaitGroup
-		wgs.Add(1)
-
-		func(rn string, fpath string, wgs *sync.WaitGroup, orgoruserName string) {
-			enqueueJob(func() {
-				runGitTools(*toolName, fpath+"/", wgs, rn, orgoruserName)
-			})
-		}(rn, fpath, &wgs, orgoruserName)
-
-		wgs.Wait()
-		Info("Scanning of: " + url + " finished\n")
 
 	}
 
