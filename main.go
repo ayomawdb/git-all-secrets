@@ -96,18 +96,7 @@ func gitclone(cloneURL string, fpath string, wg *sync.WaitGroup, rn string, orgo
 
 	//scanning
 	Info("Starting to scan: " + cloneURL + "\n")
-	var wgs sync.WaitGroup
-	wgs.Add(1)
-
-	func(rn string, fpath string, wgs *sync.WaitGroup, orgoruserName string) {
-		enqueueJob(func() {
-                        Info("Queuing scan of: " + fpath + "\n")
-			runGitTools(*toolName, fpath+"/", wgs, rn, orgoruserName)
-		})
-	}(rn, fpath, &wgs, orgoruserName)
-
-	wgs.Wait()
-
+        runGitTools(*toolName, fpath+"/", rn, orgoruserName)
 	Info("Scanning of: " + cloneURL + " finished\n")
 
 	if err != nil {
@@ -383,9 +372,7 @@ func cleanup(filepath string, reponame string, orgoruser string) error {
 	return nil;
 }
 
-func runGitTools(tool string, filepath string, wg *sync.WaitGroup, reponame string, orgoruser string) {
-	defer wg.Done()
-
+func runGitTools(tool string, filepath string, reponame string, orgoruser string) {
         Info("Run runGitTools on: " + filepath)
 	switch tool {
 	case "all":
@@ -408,17 +395,10 @@ func runGitTools(tool string, filepath string, wg *sync.WaitGroup, reponame stri
 func scanforeachuser(user string, wg *sync.WaitGroup) {
 	defer wg.Done()
 
-	var wguserrepogist sync.WaitGroup
 	gituserrepos, _ := ioutil.ReadDir("/tmp/repos/users/" + user)
 	for _, f := range gituserrepos {
-		wguserrepogist.Add(1)
-		func(user string, wg *sync.WaitGroup, wguserrepogist *sync.WaitGroup, f os.FileInfo) {
-			enqueueJob(func() {
-				runGitTools(*toolName, "/tmp/repos/users/"+user+"/"+f.Name()+"/", wguserrepogist, f.Name(), user)
-			})
-		}(user, wg, &wguserrepogist, f)
+		runGitTools(*toolName, "/tmp/repos/users/"+user+"/"+f.Name()+"/", f.Name(), user)
 	}
-	wguserrepogist.Wait()
 }
 
 func toolsOutput(toolname string, of *os.File) error {
@@ -644,19 +624,12 @@ func mergeOutputs(outputA map[string][]string, outputB map[string][]string) map[
 
 // Moving directory scanning logic out of individual functions
 func scanDir(dir string, org string) error {
-	var wg sync.WaitGroup
 
 	allRepos, _ := ioutil.ReadDir(dir)
 	for _, f := range allRepos {
-		wg.Add(1)
-		func(f os.FileInfo, wg *sync.WaitGroup, org string) {
-			enqueueJob(func() {
-				runGitTools(*toolName, dir+f.Name()+"/", wg, f.Name(), org)
-			})
-		}(f, &wg, org)
+                runGitTools(*toolName, dir+f.Name()+"/", f.Name(), org)
 
 	}
-	wg.Wait()
 	return nil
 }
 
