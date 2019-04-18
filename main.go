@@ -962,8 +962,8 @@ func main() {
 		Info(m)
 
 		//cloning all the repos of the org
-		err := cloneorgrepos(ctx, client, *org)
-		check(err)
+		//err := cloneorgrepos(ctx, client, *org)
+		//check(err)
 
 		if *teamName != "" { //If team was supplied
 			Info("Since team name was provided, the tool will clone all repos to which the team has access")
