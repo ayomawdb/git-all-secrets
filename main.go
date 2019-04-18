@@ -993,7 +993,7 @@ func main() {
 		Info("Scanning all org repositories now..This may take a while so please be patient\n")
 
 		//cloning all the repos of the org
-		err := cloneorgrepos(ctx, client, *org)
+		err = cloneorgrepos(ctx, client, *org)
 		check(err)
 
 		//err = scanorgrepos(*org)
