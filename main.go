@@ -395,10 +395,10 @@ func runGitTools(tool string, filepath string, reponame string, orgoruser string
 func scanforeachuser(user string, wg *sync.WaitGroup) {
 	defer wg.Done()
 
-	gituserrepos, _ := ioutil.ReadDir("/tmp/repos/users/" + user)
-	for _, f := range gituserrepos {
-		runGitTools(*toolName, "/tmp/repos/users/"+user+"/"+f.Name()+"/", f.Name(), user)
-	}
+	//gituserrepos, _ := ioutil.ReadDir("/tmp/repos/users/" + user)
+	//for _, f := range gituserrepos {
+	//	runGitTools(*toolName, "/tmp/repos/users/"+user+"/"+f.Name()+"/", f.Name(), user)
+	//}
 }
 
 func toolsOutput(toolname string, of *os.File) error {
@@ -625,17 +625,17 @@ func mergeOutputs(outputA map[string][]string, outputB map[string][]string) map[
 // Moving directory scanning logic out of individual functions
 func scanDir(dir string, org string) error {
 
-	allRepos, _ := ioutil.ReadDir(dir)
-	for _, f := range allRepos {
-                runGitTools(*toolName, dir+f.Name()+"/", f.Name(), org)
-
-	}
+	//allRepos, _ := ioutil.ReadDir(dir)
+	//for _, f := range allRepos {
+        //        runGitTools(*toolName, dir+f.Name()+"/", f.Name(), org)
+        //
+	//}
 	return nil
 }
 
 func scanorgrepos(org string) error {
-	err := scanDir("/tmp/repos/org/"+org+"/", org)
-	check(err)
+	//err := scanDir("/tmp/repos/org/"+org+"/", org)
+	//check(err)
 	return nil
 }
 
@@ -903,8 +903,8 @@ func cloneTeamRepos(ctx context.Context, client *github.Client, org string, team
 }
 
 func scanTeamRepos(org string) error {
-	err := scanDir("/tmp/repos/team/", org)
-	check(err)
+	//err := scanDir("/tmp/repos/team/", org)
+	//check(err)
 	return nil
 }
 
@@ -961,10 +961,6 @@ func main() {
 
 		Info(m)
 
-		//cloning all the repos of the org
-		err := cloneorgrepos(ctx, client, *org)
-		check(err)
-
 		if *teamName != "" { //If team was supplied
 			Info("Since team name was provided, the tool will clone all repos to which the team has access")
 
@@ -995,14 +991,19 @@ func main() {
 		}
 
 		Info("Scanning all org repositories now..This may take a while so please be patient\n")
-		err = scanorgrepos(*org)
+
+		//cloning all the repos of the org
+		err := cloneorgrepos(ctx, client, *org)
 		check(err)
+
+		//err = scanorgrepos(*org)
+		//check(err)
 		Info("Finished scanning all org repositories\n")
 
 		if *teamName != "" { //If team was supplied
 			Info("Scanning all team repositories now...This may take a while so please be patient\n")
-			err = scanTeamRepos(*org)
-			check(err)
+			//err = scanTeamRepos(*org)
+			//check(err)
 
 			Info("Finished scanning all team repositories\n")
 		}
@@ -1010,12 +1011,12 @@ func main() {
 		if !*orgOnly {
 
 			Info("Scanning all user repositories and gists now..This may take a while so please be patient\n")
-			var wguser sync.WaitGroup
-			for _, user := range allUsers {
-				wguser.Add(1)
-				go scanforeachuser(*user.Login, &wguser)
-			}
-			wguser.Wait()
+			//var wguser sync.WaitGroup
+			//for _, user := range allUsers {
+			//	wguser.Add(1)
+			//	go scanforeachuser(*user.Login, &wguser)
+			//}
+			//wguser.Wait()
 			Info("Finished scanning all user repositories and gists\n")
 		}
 
